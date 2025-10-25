@@ -1,4 +1,4 @@
-# A-Z Piano Key Visualizer 🎹💜
+# A-Z Piano Key Visualizer 🎹
 
 An interactive **A-Z piano keyboard** that allows you to play piano-style notes with **keyboard or mouse clicks**, while also showing **real-time key details**.
 
