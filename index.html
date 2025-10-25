@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A-Z Piano Key Visualizer 🎹</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Poppins',sans-serif;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  background: radial-gradient(circle at top left, #0f0c29, #302b63, #24243e);
+  color:#fff;
+  overflow-x:auto;
+}
+h1{
+  font-weight:600;
+  color:#f9b4ff;
+  font-size:2rem;
+  margin:20px 0;
+  letter-spacing:1px;
+  text-align:center;
+}
+.piano-container{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:8px;
+  margin-bottom:20px;
+}
+.key{
+  width:60px;
+  height:80px;
+  background:#fff;
+  color:#000;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+  font-size:1.2rem;
+  transition: all 0.15s ease;
+  position:relative;
+}
+.key.pressed{
+  background:#ffd6f7;
+  transform:scale(0.95);
+  box-shadow:0 5px 15px rgba(255,0,200,0.5);
+}
+#key-history{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+#key-history li{
+  background:#6c5ce7;
+  padding:6px 12px;
+  border-radius:25px;
+  font-weight:500;
+  box-shadow: 0 5px 15px rgba(108,92,231,0.4);
+  transition: all 0.3s ease;
+}
+#key-history li:hover{
+  transform: translateY(-3px) rotate(-2deg);
+  box-shadow: 0 10px 25px rgba(108,92,231,0.6);
+}
+#key-details{
+  margin-top:10px;
+  background: rgba(0,0,0,0.4);
+  padding:10px 15px;
+  border-radius:10px;
+  font-size:1rem;
+  color:#fff;
+  font-weight:500;
+}
+.particle{
+  position:absolute;
+  width:10px;
+  height:10px;
+  background:#ff80ab;
+  border-radius:50%;
+  pointer-events:none;
+  animation: float 0.8s ease-out forwards;
+}
+@keyframes float{
+  to{
+    transform: translateY(-50px) scale(0);
+    opacity:0;
+  }
+}
+@media(max-width:480px){
+  .key{width:45px;height:65px;font-size:1rem;}
+}
+</style>
+</head>
+<body>
+<h1>A-Z Piano Key Visualizer 🎹</h1>
+<div class="piano-container" id="piano"></div>
+<ul id="key-history"></ul>
+<div id="key-details">Press any key!</div>
+
+<script>
+const piano = document.getElementById('piano');
+const historyList = document.getElementById('key-history');
+const keyDetails = document.getElementById('key-details');
+let lastKeys=[];
+
+// Map A-Z to piano notes (C4 -> higher)
+const noteNames = [
+  'C4','C#4','D4','D#4','E4','F4','F#4','G4','G#4','A4','A#4','B4',
+  'C5','C#5','D5','D#5','E5','F5','F#5','G5','G#5','A5','A#5','B5'
+];
+const letters = Array.from({length:26},(_,i)=>String.fromCharCode(65+i));
+
+const keys = letters.map((l,i)=>{
+  const el = document.createElement('div');
+  el.classList.add('key');
+  el.textContent = l;
+  piano.appendChild(el);
+  return {letter:l, note:noteNames[i%noteNames.length], el};
+});
+
+// Particle effect
+function createParticle(x,y){
+  const p = document.createElement('div');
+  p.classList.add('particle');
+  p.style.left=x+'px';
+  p.style.top=y+'px';
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(),800);
+}
+
+// Play piano note using Web Audio API
+function playNote(note){
+  const noteFreqMap = {
+    'C4':261.63,'C#4':277.18,'D4':293.66,'D#4':311.13,'E4':329.63,
+    'F4':349.23,'F#4':369.99,'G4':392,'G#4':415.30,'A4':440,'A#4':466.16,'B4':493.88,
+    'C5':523.25,'C#5':554.37,'D5':587.33,'D#5':622.25,'E5':659.25,
+    'F5':698.46,'F#5':739.99,'G5':783.99,'G#5':830.61,'A5':880,'A#5':932.33,'B5':987.77
+  };
+  const freq = noteFreqMap[note];
+  if(!freq) return;
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = ctx.createOscillator();
+  osc.type='triangle';
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0,ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.25,ctx.currentTime+0.02);
+  gain.gain.linearRampToValueAtTime(0,ctx.currentTime+0.3);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.frequency.setValueAtTime(freq,ctx.currentTime);
+  osc.start();
+  osc.stop(ctx.currentTime+0.3);
+}
+
+// Handle key press
+function handleKey(kObj, e){
+  playNote(kObj.note);
+  kObj.el.classList.add('pressed');
+  setTimeout(()=>kObj.el.classList.remove('pressed'),200);
+
+  // Last 10 pressed keys
+  lastKeys.unshift(kObj.letter);
+  if(lastKeys.length>10) lastKeys.pop();
+  historyList.innerHTML = lastKeys.map(k=>`<li>${k}</li>`).join('');
+
+  // Key details
+  if(e){
+    keyDetails.innerHTML = `
+      Key: ${e.key.toUpperCase()} &nbsp;|&nbsp; 
+      KeyCode: ${e.keyCode} &nbsp;|&nbsp; 
+      Code: ${e.code}
+    `;
+  }
+
+  // Particles
+  const rect = kObj.el.getBoundingClientRect();
+  for(let i=0;i<5;i++){
+    const x = rect.left + Math.random()*rect.width;
+    const y = rect.top + Math.random()*rect.height;
+    createParticle(x,y);
+  }
+}
+
+// Mouse click
+keys.forEach(k=>k.el.addEventListener('mousedown',()=>handleKey(k)));
+
+// Keyboard press
+window.addEventListener('keydown', e=>{
+  const upper = e.key.toUpperCase();
+  const kObj = keys.find(k=>k.letter===upper);
+  if(kObj) handleKey(kObj, e);
+});
+</script>
+</body>
+</html>
