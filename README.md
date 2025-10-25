@@ -19,7 +19,7 @@ An interactive **A-Z piano keyboard** that allows you to play piano-style notes 
 
 You can view the live demo here:
 
-a-z-piano-key-visualizer.vercel.app  <!-- Replace # with your deployed link -->
+[A-Z Piano Key Visualizer](https://a-z-piano-key-visualizer.vercel.app)
 
 ---
 
